@@ -19,3 +19,15 @@ export function parsePage(value: string | undefined, fallback = 1) {
 
   return page;
 }
+
+export function getSafeRedirectPath(value: string | undefined, fallback = "/") {
+  if (!value) {
+    return fallback;
+  }
+
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return fallback;
+  }
+
+  return value;
+}

@@ -6,6 +6,7 @@ PaperFlow は、arXiv の公開論文を X ライクなタイムラインで閲�
 
 - Supabase Auth を使ったメール / パスワード認証
 - arXiv API からの論文タイムライン取得
+- Gemini API を使ったタイトル / Abstract の日本語翻訳
 - Supabase にお気に入り保存
 - X 共有ボタン
 - Vercel デプロイ前提の App Router 構成
@@ -16,6 +17,7 @@ PaperFlow は、arXiv の公開論文を X ライクなタイムラインで閲�
 - React 19
 - Supabase Auth / Postgres
 - arXiv API
+- Gemini API
 - Vercel
 
 ## Local Setup
@@ -27,7 +29,7 @@ PaperFlow は、arXiv の公開論文を X ライクなタイムラインで閲�
 npm install
 ```
 
-3. `.env.example` を元に `.env.local` を作成し、Supabase の URL と Publishable Key を設定します。
+3. `.env.example` を元に `.env.local` を作成し、Supabase の URL / Publishable Key と `GEMINI_API_KEY` を設定します。
 4. Supabase で [`supabase/migrations/202604210001_create_favorite_papers.sql`](supabase/migrations/202604210001_create_favorite_papers.sql) を実行します。
 5. 開発サーバーを起動します。
 
@@ -55,7 +57,13 @@ Supabase のメール確認フローを SSR で動かすため、以下を設定
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `NEXT_PUBLIC_APP_URL`
+   - `GEMINI_API_KEY`
 3. Supabase 側の Redirect URLs に本番ドメインを追加します。
+
+## Gemini Translation
+
+- 一覧ページと詳細ページでは、Gemini API を使って論文タイトルと Abstract を日本語に翻訳します。
+- `GEMINI_API_KEY` が未設定の場合は、原文のまま表示されます。
 
 ## Project Structure
 

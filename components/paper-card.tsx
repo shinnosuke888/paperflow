@@ -1,23 +1,43 @@
 "use client";
 
+import Link from "next/link";
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { formatAbsoluteDate, formatRelativeDate, formatShortDate } from "@/lib/format";
+import { buildPaperHref, buildPaperSummaryPreview } from "@/lib/papers";
 import { cx } from "@/lib/utils";
 import type { Paper } from "@/types/paper";
 
 type PaperCardProps = {
   paper: Paper;
   initialSaved: boolean;
+  isAuthenticated: boolean;
+  loginHref?: string;
   savedAt?: string | null;
+  showDetailLink?: boolean;
+  showFullSummary?: boolean;
 };
 
-export function PaperCard({ paper, initialSaved, savedAt }: PaperCardProps) {
+export function PaperCard({
+  paper,
+  initialSaved,
+  isAuthenticated,
+  loginHref = "/login",
+  savedAt,
+  showDetailLink = true,
+  showFullSummary = false,
+}: PaperCardProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
   const [pending, setPending] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const detailHref = buildPaperHref(paper.id);
+  const displayTitle = paper.translatedTitle ?? paper.title;
+  const summarySource = paper.translatedSummary ?? paper.summary;
+  const summaryText = showFullSummary
+    ? summarySource
+    : buildPaperSummaryPreview(summarySource, 260);
 
   async function handleFavoriteToggle() {
     if (pending) {
@@ -41,6 +61,11 @@ export function PaperCard({ paper, initialSaved, savedAt }: PaperCardProps) {
         }),
       });
 
+      if (response.status === 401) {
+        router.push(loginHref);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Favorite update failed");
       }
@@ -58,8 +83,8 @@ export function PaperCard({ paper, initialSaved, savedAt }: PaperCardProps) {
 
   async function handleShare() {
     const payload = {
-      title: paper.title,
-      text: `${paper.title} | PaperFlow`,
+      title: displayTitle,
+      text: `${displayTitle} | PaperFlow`,
       url: paper.arxivUrl,
     };
 
@@ -75,7 +100,7 @@ export function PaperCard({ paper, initialSaved, savedAt }: PaperCardProps) {
     }
 
     const shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(
-      `${paper.title} ${paper.arxivUrl}`,
+      `${displayTitle} ${paper.arxivUrl}`,
     )}`;
     window.open(shareUrl, "_blank", "noopener,noreferrer");
   }
@@ -88,23 +113,40 @@ export function PaperCard({ paper, initialSaved, savedAt }: PaperCardProps) {
         <span className="meta-text" title={formatAbsoluteDate(paper.publishedAt)}>
           {formatRelativeDate(paper.publishedAt)}
         </span>
-        {savedAt ? <span className="meta-text">Saved {formatShortDate(savedAt)}</span> : null}
+        {savedAt ? <span className="meta-text">保存日 {formatShortDate(savedAt)}</span> : null}
       </div>
 
       <div className="paper-body">
         {paper.authors.length > 0 ? (
           <p className="paper-authors">{paper.authors.slice(0, 4).join(", ")}</p>
         ) : null}
-        <h2 className="paper-title">{paper.title}</h2>
-        <p className="paper-summary">{paper.summary}</p>
+        {showDetailLink ? (
+          <Link className="paper-title-link" href={detailHref}>
+            <h2 className="paper-title">{displayTitle}</h2>
+          </Link>
+        ) : (
+          <h2 className="paper-title">{displayTitle}</h2>
+        )}
 
-        {paper.comment ? <p className="paper-comment">Author note: {paper.comment}</p> : null}
+        <div className="summary-block">
+          <span className="summary-label">{paper.translatedSummary ? "日本語要約" : "要約"}</span>
+          <p className={cx("paper-summary", showFullSummary && "is-expanded")}>{summaryText}</p>
+        </div>
+
+        {paper.translatedTitle ? <p className="paper-original-title">Original: {paper.title}</p> : null}
+
+        {paper.comment ? <p className="paper-comment">著者メモ: {paper.comment}</p> : null}
       </div>
 
       <div className="paper-footer">
         <div className="paper-links">
+          {showDetailLink ? (
+            <Link className="link-button" href={detailHref}>
+              詳細
+            </Link>
+          ) : null}
           <a className="link-button" href={paper.arxivUrl} rel="noreferrer" target="_blank">
-            Read
+            原文
           </a>
           {paper.pdfUrl ? (
             <a className="link-button muted" href={paper.pdfUrl} rel="noreferrer" target="_blank">
@@ -114,17 +156,23 @@ export function PaperCard({ paper, initialSaved, savedAt }: PaperCardProps) {
         </div>
 
         <div className="paper-actions">
-          <button
-            className={cx("action-button", saved && "is-active")}
-            disabled={pending}
-            onClick={handleFavoriteToggle}
-            type="button"
-          >
-            {saved ? "Saved" : "Save"}
-          </button>
+          {isAuthenticated ? (
+            <button
+              className={cx("action-button", saved && "is-active")}
+              disabled={pending}
+              onClick={handleFavoriteToggle}
+              type="button"
+            >
+              {saved ? "保存済み" : "保存"}
+            </button>
+          ) : (
+            <Link className="action-button" href={loginHref}>
+              ログインして保存
+            </Link>
+          )}
 
           <button className="action-button" onClick={handleShare} type="button">
-            Share
+            共有
           </button>
         </div>
       </div>
