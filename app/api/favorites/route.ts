@@ -17,6 +17,8 @@ function normalizePaper(payload: Partial<Paper> | undefined): Paper | null {
     source: "arxiv",
     title: payload.title,
     summary: payload.summary ?? "",
+    translatedTitle: payload.translatedTitle ?? null,
+    translatedSummary: payload.translatedSummary ?? null,
     authors: Array.isArray(payload.authors) ? payload.authors.filter(Boolean) : [],
     categories: Array.isArray(payload.categories) ? payload.categories.filter(Boolean) : [],
     primaryCategory: payload.primaryCategory ?? "arXiv",

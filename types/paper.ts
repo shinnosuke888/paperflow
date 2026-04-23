@@ -3,6 +3,8 @@ export type Paper = {
   source: "arxiv";
   title: string;
   summary: string;
+  translatedTitle: string | null;
+  translatedSummary: string | null;
   authors: string[];
   categories: string[];
   primaryCategory: string;

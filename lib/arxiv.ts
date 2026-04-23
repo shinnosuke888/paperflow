@@ -96,6 +96,8 @@ function parseEntry(entry: ArxivEntry): Paper {
     source: "arxiv",
     title: sanitizeText(entry.title),
     summary: sanitizeText(entry.summary),
+    translatedTitle: null,
+    translatedSummary: null,
     authors,
     categories,
     primaryCategory:
@@ -106,6 +108,24 @@ function parseEntry(entry: ArxivEntry): Paper {
     pdfUrl: pdfUrl ? normalizeArxivUrl(pdfUrl) : null,
     comment: sanitizeText(entry["arxiv:comment"]) || null,
   };
+}
+
+async function fetchArxivFeed(params: URLSearchParams, revalidate = 900) {
+  const response = await fetch(`https://export.arxiv.org/api/query?${params.toString()}`, {
+    headers: {
+      "User-Agent": "PaperFlow/0.1 (open research timeline)",
+    },
+    next: {
+      revalidate,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch papers from arXiv.");
+  }
+
+  const xml = await response.text();
+  return parser.parse(xml) as ArxivFeedResponse;
 }
 
 export async function fetchArxivPapers({
@@ -122,22 +142,7 @@ export async function fetchArxivPapers({
     sortBy: "submittedDate",
     sortOrder: "descending",
   });
-
-  const response = await fetch(`https://export.arxiv.org/api/query?${params.toString()}`, {
-    headers: {
-      "User-Agent": "PaperFlow/0.1 (open research timeline)",
-    },
-    next: {
-      revalidate: 900,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch papers from arXiv.");
-  }
-
-  const xml = await response.text();
-  const parsed = parser.parse(xml) as ArxivFeedResponse;
+  const parsed = await fetchArxivFeed(params);
   const feed = parsed.feed;
   const entries = toArray(feed?.entry).map(parseEntry);
   const total = Number(feed?.["opensearch:totalResults"] ?? entries.length);
@@ -148,4 +153,14 @@ export async function fetchArxivPapers({
     start,
     pageSize: TIMELINE_PAGE_SIZE,
   };
+}
+
+export async function fetchArxivPaperById(id: string) {
+  const params = new URLSearchParams({
+    id_list: id,
+  });
+  const parsed = await fetchArxivFeed(params, 3600);
+  const entry = toArray(parsed.feed?.entry).map(parseEntry)[0];
+
+  return entry ?? null;
 }

@@ -9,12 +9,16 @@ export function TimelineFilters({ category, query }: TimelineFiltersProps) {
   return (
     <form action="/" className="filter-form">
       <label className="field grow">
-        <span>Search</span>
-        <input defaultValue={query} name="q" placeholder="transformer, reasoning, diffusion..." />
+        <span>キーワード検索</span>
+        <input
+          defaultValue={query}
+          name="q"
+          placeholder="transformer, reasoning, diffusion など"
+        />
       </label>
 
       <label className="field">
-        <span>Category</span>
+        <span>カテゴリ</span>
         <select defaultValue={category} name="category">
           {PAPER_CATEGORIES.map((item) => (
             <option key={item.value} value={item.value}>
@@ -25,7 +29,7 @@ export function TimelineFilters({ category, query }: TimelineFiltersProps) {
       </label>
 
       <button className="primary-button" type="submit">
-        Refresh feed
+        更新する
       </button>
     </form>
   );

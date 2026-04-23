@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getOptionalAuth } from "@/lib/auth";
-import { firstParam } from "@/lib/utils";
+import { firstParam, getSafeRedirectPath } from "@/lib/utils";
 
 import { loginAction, signupAction } from "./actions";
 
@@ -13,10 +13,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = (await searchParams) ?? {};
   const error = firstParam(params.error);
   const message = firstParam(params.message);
+  const next = getSafeRedirectPath(firstParam(params.next));
   const { userId } = await getOptionalAuth();
 
   if (userId) {
-    redirect("/");
+    redirect(next);
   }
 
   return (
@@ -31,15 +32,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         <div className="hero-grid">
           <article className="hero-card">
-            <strong>Live feed</strong>
+            <strong>ライブフィード</strong>
             <span>新着論文を時系列で取得</span>
           </article>
           <article className="hero-card">
-            <strong>Save for later</strong>
+            <strong>あとで保存</strong>
             <span>Supabase にお気に入り保存</span>
           </article>
           <article className="hero-card">
-            <strong>Share fast</strong>
+            <strong>すぐ共有</strong>
             <span>X 共有にそのまま接続</span>
           </article>
         </div>
@@ -54,8 +55,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         {message ? <p className="notice success">{message}</p> : null}
         {error ? <p className="notice error">{error}</p> : null}
+        {next !== "/" ? (
+          <p className="notice neutral">ログイン後は元のページに戻ります。</p>
+        ) : null}
 
         <form className="auth-form">
+          <input name="redirectTo" type="hidden" value={next} />
           <label className="field">
             <span>メールアドレス</span>
             <input name="email" placeholder="name@example.com" required type="email" />
