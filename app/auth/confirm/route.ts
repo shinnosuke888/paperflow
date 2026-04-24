@@ -22,7 +22,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
-      return NextResponse.redirect(redirectTo);
+      const loginRedirect = request.nextUrl.clone();
+      loginRedirect.pathname = "/login";
+      loginRedirect.searchParams.set("message", "メール確認が完了しました。ログインしてください。");
+      if (next !== "/") {
+        loginRedirect.searchParams.set("next", next);
+      }
+
+      return NextResponse.redirect(loginRedirect);
     }
   }
 
